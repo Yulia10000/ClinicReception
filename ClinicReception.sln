@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicReception.App", "ClinicReception.App\ClinicReception.App.csproj", "{F2923F27-7F38-4D07-A7B2-D1E8EAFB4E74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicReception.Core", "ClinicReception.Core\ClinicReception.Core.csproj", "{322D45D3-F11E-4C03-9128-033B26C02ECC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F2923F27-7F38-4D07-A7B2-D1E8EAFB4E74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2923F27-7F38-4D07-A7B2-D1E8EAFB4E74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2923F27-7F38-4D07-A7B2-D1E8EAFB4E74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2923F27-7F38-4D07-A7B2-D1E8EAFB4E74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{322D45D3-F11E-4C03-9128-033B26C02ECC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{322D45D3-F11E-4C03-9128-033B26C02ECC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{322D45D3-F11E-4C03-9128-033B26C02ECC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{322D45D3-F11E-4C03-9128-033B26C02ECC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FFA2CA9F-6000-47F6-996B-F57F1240D72B}
+	EndGlobalSection
+EndGlobal
