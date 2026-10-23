@@ -15,8 +15,9 @@ indent_size = 2
 
 [*.cs]
 max_line_length = 100
+dotnet_diagnostic.IDE0055.severity = warning
 
-# форматування у стилі Allman
+# Форматування у стилі Allman
 csharp_new_line_before_open_brace = all
 csharp_new_line_before_else = true
 csharp_new_line_before_catch = true
@@ -24,17 +25,29 @@ csharp_prefer_braces = true:warning
 csharp_indent_case_contents = true
 dotnet_sort_system_directives_first = true
 
-# сучасний синтаксис C#
+# Сучасний синтаксис C#
 csharp_style_namespace_declarations = file_scoped:warning
 csharp_style_var_for_built_in_types = false:suggestion
 
-# іменування: приватні поля з підкресленням
+# Іменування констант у PascalCase
+dotnet_naming_rule.constant_pascal_case.symbols = const_field
+dotnet_naming_rule.constant_pascal_case.style = pascal_case
+dotnet_naming_rule.constant_pascal_case.severity = warning
+
+dotnet_naming_symbols.const_field.applicable_kinds = field
+dotnet_naming_symbols.const_field.applicable_accessibilities = *
+dotnet_naming_symbols.const_field.required_modifiers = const
+
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+# Іменування приватних полів із підкресленням
 dotnet_naming_rule.priv_underscore.symbols = priv_field
 dotnet_naming_rule.priv_underscore.style = underscore_camel
 dotnet_naming_rule.priv_underscore.severity = warning
 
 dotnet_naming_symbols.priv_field.applicable_kinds = field
 dotnet_naming_symbols.priv_field.applicable_accessibilities = private
+dotnet_naming_symbols.priv_field.required_modifiers = 
 
 dotnet_naming_style.underscore_camel.capitalization = camel_case
 dotnet_naming_style.underscore_camel.required_prefix = _
