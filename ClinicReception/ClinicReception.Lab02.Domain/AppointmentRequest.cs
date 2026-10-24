@@ -1,5 +1,6 @@
 
 
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -11,20 +12,44 @@ namespace ClinicReception.Lab02.Domain;
 /// </summary>
 public class AppointmentRequest
 {
+    /// <summary>Новий статус заявки.</summary>
     private const int StatusNew = 0;
+
+    /// <summary>Підтверджений статус заявки.</summary>
     private const int StatusConfirmed = 1;
+
+    /// <summary>Завершений статус заявки.</summary>
     private const int StatusCompleted = 2;
+
+    /// <summary>Скасований статус заявки.</summary>
     private const int StatusCancelled = 3;
 
+    /// <summary>Ставка податку на додану вартість.</summary>
     private const decimal VatRate = 0.2m;
+
+    /// <summary>Поріг суми для знижки постійному пацієнту.</summary>
     private const decimal RegularDiscountThreshold = 1000m;
+
+    /// <summary>Частка знижки постійному пацієнту.</summary>
     private const decimal RegularDiscountRate = 0.10m;
-    private const decimal LargeRequestThreshold = 5000m;
-    private const decimal LargeRequestDiscountRate = 0.15m;
+
+    /// <summary>Поріг суми для знижки на велике замовлення.</summary>
+    private const decimal LargeOrderThreshold = 5000m;
+
+    /// <summary>Частка знижки на велике замовлення.</summary>
+    private const decimal LargeOrderDiscountRate = 0.15m;
+
+    /// <summary>Кількість рядків, з якої діє гуртова знижка.</summary>
     private const int BulkLineCount = 10;
+
+    /// <summary>Сума гуртової знижки, грн.</summary>
     private const decimal BulkDiscountAmount = 100m;
+
+    /// <summary>Максимальна кількість рядків замовлення.</summary>
     private const int MaxLineCount = 100;
-    private const int MinPatientNameLength = 2;
+
+    /// <summary>Мінімальна довжина імені пацієнта.</summary>
+    private const int MinCustomerNameLength = 2;
 
     private readonly List<string[]> _services = new();
 
@@ -105,9 +130,9 @@ public class AppointmentRequest
         {
             total *= 1m - RegularDiscountRate;
         }
-        else if (total > LargeRequestThreshold)
+        else if (total > LargeOrderThreshold)
         {
-            total *= 1m - LargeRequestDiscountRate;
+            total *= 1m - LargeOrderDiscountRate;
         }
 
         if (lineCount > BulkLineCount)
@@ -164,7 +189,7 @@ public class AppointmentRequest
     {
         return !string.IsNullOrEmpty(Id)
             && !string.IsNullOrEmpty(PatientName)
-            && PatientName.Length > MinPatientNameLength
+            && PatientName.Length > MinCustomerNameLength
             && _services.Count > 0
             && _services.Count < MaxLineCount
             && Status >= StatusNew
@@ -222,6 +247,7 @@ public class AppointmentRequest
         return null;
     }
 }
+
 
 
 
