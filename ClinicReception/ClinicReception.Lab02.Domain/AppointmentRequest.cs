@@ -1,4 +1,5 @@
 
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -6,95 +7,112 @@ using System.Globalization;
 namespace ClinicReception.Lab02.Domain;
 
 /// <summary>
-/// Представляє заявку пацієнта на медичні послуги.
+/// Представляє заявку на медичний прийом із переліком послуг.
 /// </summary>
 public class AppointmentRequest
 {
+    private const int StatusNew = 0;
+    private const int StatusConfirmed = 1;
+    private const int StatusCompleted = 2;
+    private const int StatusCancelled = 3;
+
     private const decimal VatRate = 0.2m;
-    private const decimal RegularPatientDiscount = 0.1m;
-    private const decimal LargeOrderDiscount = 0.15m;
-    private const decimal MinimumRegularOrder = 1000m;
-    private const decimal MinimumLargeOrder = 5000m;
-    private const decimal BulkDiscount = 100m;
+    private const decimal RegularDiscountThreshold = 1000m;
+    private const decimal RegularDiscountRate = 0.10m;
+    private const decimal LargeRequestThreshold = 5000m;
+    private const decimal LargeRequestDiscountRate = 0.15m;
     private const int BulkLineCount = 10;
-    private const int MinimumPatientNameLength = 2;
-    private const int MaximumServiceCount = 100;
+    private const decimal BulkDiscountAmount = 100m;
+    private const int MaxLineCount = 100;
+    private const int MinPatientNameLength = 2;
 
-    private const int NewStatus = 0;
-    private const int ConfirmedStatus = 1;
-    private const int CompletedStatus = 2;
-    private const int CancelledStatus = 3;
+    private readonly List<string[]> _services = new();
 
+    /// <summary>
+    /// Ініціалізує нову заявку на прийом.
+    /// </summary>
+    /// <param name="id">Ідентифікатор заявки.</param>
+    /// <param name="patientName">Ім'я пацієнта.</param>
     public AppointmentRequest(string id, string patientName)
     {
         Id = id;
         PatientName = patientName;
         CreatedAt = DateTime.Now;
+        Status = StatusNew;
     }
 
-    public string Id { get; set; }
+    /// <summary>
+    /// Повертає ідентифікатор заявки.
+    /// </summary>
+    public string Id { get; private set; }
 
-    public string PatientName { get; set; }
+    /// <summary>
+    /// Повертає ім'я пацієнта.
+    /// </summary>
+    public string PatientName { get; private set; }
 
-    public List<string[]> Services { get; set; } = new List<string[]>();
+    /// <summary>
+    /// Повертає дату й час створення заявки.
+    /// </summary>
+    public DateTime CreatedAt { get; private set; }
 
-    public int Status { get; set; }
-
-    public DateTime CreatedAt { get; set; }
+    /// <summary>
+    /// Повертає поточний числовий статус заявки.
+    /// </summary>
+    public int Status { get; private set; }
 
     /// <summary>
     /// Додає послугу до заявки.
     /// </summary>
-    /// <param name="serviceName">Назва послуги.</param>
+    /// <param name="serviceName">Назва медичної послуги.</param>
     /// <param name="quantity">Кількість послуг.</param>
-    /// <param name="unitPrice">Ціна за одиницю.</param>
-    public void Add(string serviceName, int quantity, decimal unitPrice)
+    /// <param name="unitPrice">Вартість однієї послуги.</param>
+    public void AddService(string serviceName, int quantity, decimal unitPrice)
     {
         string[] serviceData = new string[3];
-
         serviceData[0] = serviceName;
-        serviceData[1] = quantity.ToString(CultureInfo.InvariantCulture);
-        serviceData[2] = unitPrice.ToString(CultureInfo.InvariantCulture);
+        serviceData[1] = quantity.ToString(CultureInfo.CurrentCulture);
+        serviceData[2] = unitPrice.ToString(CultureInfo.CurrentCulture);
 
-        Services.Add(serviceData);
+        _services.Add(serviceData);
     }
 
     /// <summary>
-    /// Обчислює загальну вартість послуг у заявці.
+    /// Обчислює підсумкову вартість послуг із урахуванням знижок і ПДВ.
     /// </summary>
-    /// <param name="isRegularPatient">Вказує, чи є пацієнт постійним.</param>
-    /// <returns>Загальна вартість послуг.</returns>
+    /// <param name="isRegularPatient">Ознака постійного пацієнта.</param>
+    /// <returns>Підсумкова вартість послуг.</returns>
     public decimal CalculateTotal(bool isRegularPatient)
     {
         decimal total = 0;
         int lineCount = 0;
 
-        for (int i = 0; i < Services.Count; i++)
+        foreach (string[] service in _services)
         {
             int quantity = int.Parse(
-                Services[i][1],
-                CultureInfo.InvariantCulture);
+                service[1],
+                CultureInfo.CurrentCulture);
 
             decimal unitPrice = decimal.Parse(
-                Services[i][2],
-                CultureInfo.InvariantCulture);
+                service[2],
+                CultureInfo.CurrentCulture);
 
             total += quantity * unitPrice;
             lineCount++;
         }
 
-        if (isRegularPatient && total > MinimumRegularOrder)
+        if (isRegularPatient && total > RegularDiscountThreshold)
         {
-            total *= 1 - RegularPatientDiscount;
+            total *= 1m - RegularDiscountRate;
         }
-        else if (total > MinimumLargeOrder)
+        else if (total > LargeRequestThreshold)
         {
-            total *= 1 - LargeOrderDiscount;
+            total *= 1m - LargeRequestDiscountRate;
         }
 
         if (lineCount > BulkLineCount)
         {
-            total -= BulkDiscount;
+            total -= BulkDiscountAmount;
         }
 
         if (total < 0)
@@ -102,6 +120,7 @@ public class AppointmentRequest
             total = 0;
         }
 
+        // ПДВ нараховується на суму після застосування знижок.
         total += total * VatRate;
 
         return Math.Round(total, 2);
@@ -111,24 +130,26 @@ public class AppointmentRequest
     /// Намагається змінити статус заявки.
     /// </summary>
     /// <param name="newStatus">Новий статус заявки.</param>
-    /// <returns>True, якщо статус змінено; інакше false.</returns>
+    /// <returns>
+    /// true, якщо перехід дозволений; інакше false.
+    /// </returns>
     public bool TryChangeStatus(int newStatus)
     {
-        if (Status == NewStatus && newStatus == ConfirmedStatus)
+        if (Status == StatusNew && newStatus == StatusConfirmed)
         {
-            Status = ConfirmedStatus;
+            Status = StatusConfirmed;
             return true;
         }
 
-        if (Status == ConfirmedStatus && newStatus == CompletedStatus)
+        if (Status == StatusConfirmed && newStatus == StatusCompleted)
         {
-            Status = CompletedStatus;
+            Status = StatusCompleted;
             return true;
         }
 
-        if (Status == NewStatus && newStatus == CancelledStatus)
+        if (Status == StatusNew && newStatus == StatusCancelled)
         {
-            Status = CancelledStatus;
+            Status = StatusCancelled;
             return true;
         }
 
@@ -136,74 +157,65 @@ public class AppointmentRequest
     }
 
     /// <summary>
-    /// Перевіряє коректність заявки.
+    /// Перевіряє коректність основних даних заявки.
     /// </summary>
-    /// <returns>True, якщо заявка відповідає умовам перевірки.</returns>
+    /// <returns>true, якщо дані відповідають заданим умовам.</returns>
     public bool IsValid()
     {
-        if (Id != null &&
-            Id != "" &&
-            PatientName != null &&
-            PatientName.Length > MinimumPatientNameLength &&
-            Services.Count > 0 &&
-            Services.Count < MaximumServiceCount &&
-            Status >= NewStatus &&
-            Status <= CancelledStatus)
-        {
-            return true;
-        }
-
-        return false;
+        return !string.IsNullOrEmpty(Id)
+            && !string.IsNullOrEmpty(PatientName)
+            && PatientName.Length > MinPatientNameLength
+            && _services.Count > 0
+            && _services.Count < MaxLineCount
+            && Status >= StatusNew
+            && Status <= StatusCancelled;
     }
 
     /// <summary>
-    /// Створює текстовий звіт про послуги заявки.
+    /// Формує текстовий звіт про послуги заявки.
     /// </summary>
-    /// <returns>Текст звіту.</returns>
+    /// <returns>Текстовий звіт із сумою.</returns>
     public string CreateReport()
     {
-        string report = "";
+        string report = string.Empty;
 
-        for (int i = 0; i < Services.Count; i++)
+        foreach (string[] service in _services)
         {
             int quantity = int.Parse(
-                Services[i][1],
-                CultureInfo.InvariantCulture);
+                service[1],
+                CultureInfo.CurrentCulture);
 
             decimal unitPrice = decimal.Parse(
-                Services[i][2],
-                CultureInfo.InvariantCulture);
+                service[2],
+                CultureInfo.CurrentCulture);
 
             decimal serviceTotal = quantity * unitPrice;
 
             report +=
-                "Послуга: " + Services[i][0] +
-                "; кількість: " + Services[i][1] +
-                "; ціна: " + Services[i][2] +
-                "; сума: " + serviceTotal +
-                "\n";
+                $"Послуга: {service[0]}; кількість: {service[1]}; "
+                + $"ціна: {service[2]}; сума: {serviceTotal}\n";
         }
 
-        report += "Разом: " + CalculateTotal(false) + "\n";
+        report += $"Разом: {CalculateTotal(false)}\n";
 
         return report;
     }
 
     /// <summary>
-    /// Знаходить заявку за ідентифікатором.
+    /// Знаходить заявку за ідентифікатором у переданому списку.
     /// </summary>
     /// <param name="requests">Список заявок для пошуку.</param>
     /// <param name="id">Ідентифікатор заявки.</param>
-    /// <returns>Знайдена заявка або null.</returns>
+    /// <returns>Знайдена заявка або null, якщо її немає.</returns>
     public static AppointmentRequest? FindById(
         List<AppointmentRequest> requests,
         string id)
     {
-        for (int i = 0; i < requests.Count; i++)
+        foreach (AppointmentRequest request in requests)
         {
-            if (requests[i].Id == id)
+            if (request.Id == id)
             {
-                return requests[i];
+                return request;
             }
         }
 
