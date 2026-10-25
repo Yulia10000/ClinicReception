@@ -1,4 +1,4 @@
-﻿namespace ClinicReception.Core.Domain;
+namespace ClinicReception.Core.Domain;
 
 public sealed class VisitItem
 {
