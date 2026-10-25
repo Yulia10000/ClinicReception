@@ -1,4 +1,4 @@
-﻿namespace ClinicReception.Core;
+namespace ClinicReception.Core;
 
 public class Class1
 {

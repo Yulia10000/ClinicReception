@@ -1,6 +1,3 @@
-
-
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -54,7 +51,7 @@ public class AppointmentRequest
     private readonly List<string[]> _services = new();
 
     /// <summary>
-    /// Ініціалізує нову заявку на прийом.
+    /// Initializes a new instance of the <see cref="AppointmentRequest"/> class.
     /// </summary>
     /// <param name="id">Ідентифікатор заявки.</param>
     /// <param name="patientName">Ім'я пацієнта.</param>
@@ -67,24 +64,45 @@ public class AppointmentRequest
     }
 
     /// <summary>
-    /// Повертає ідентифікатор заявки.
+    /// Gets the identifier of the appointment request.
     /// </summary>
     public string Id { get; private set; }
 
     /// <summary>
-    /// Повертає ім'я пацієнта.
+    /// Gets the patient's name.
     /// </summary>
     public string PatientName { get; private set; }
 
     /// <summary>
-    /// Повертає дату й час створення заявки.
+    /// Gets the date and time when the request was created.
     /// </summary>
     public DateTime CreatedAt { get; private set; }
 
     /// <summary>
-    /// Повертає поточний числовий статус заявки.
+    /// Gets the current numeric status of the request.
     /// </summary>
     public int Status { get; private set; }
+
+    /// <summary>
+    /// Finds an appointment request by its identifier in the specified list.
+    /// </summary>
+    /// <param name="requests">The list of appointment requests to search.</param>
+    /// <param name="id">The identifier of the appointment request.</param>
+    /// <returns>The matching request, or null if no match is found.</returns>
+    public static AppointmentRequest? FindById(
+        List<AppointmentRequest> requests,
+        string id)
+    {
+        foreach (AppointmentRequest request in requests)
+        {
+            if (request.Id == id)
+            {
+                return request;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Додає послугу до заявки.
@@ -225,29 +243,4 @@ public class AppointmentRequest
 
         return report;
     }
-
-    /// <summary>
-    /// Знаходить заявку за ідентифікатором у переданому списку.
-    /// </summary>
-    /// <param name="requests">Список заявок для пошуку.</param>
-    /// <param name="id">Ідентифікатор заявки.</param>
-    /// <returns>Знайдена заявка або null, якщо її немає.</returns>
-    public static AppointmentRequest? FindById(
-        List<AppointmentRequest> requests,
-        string id)
-    {
-        foreach (AppointmentRequest request in requests)
-        {
-            if (request.Id == id)
-            {
-                return request;
-            }
-        }
-
-        return null;
-    }
 }
-
-
-
-
