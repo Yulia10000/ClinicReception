@@ -1,47 +1,74 @@
-
 using System;
 using System.Collections.Generic;
 using ClinicReception.Core.Domain;
+using ClinicReception.Core.Documents;
 using ClinicReception.Core.Legacy;
 using Xunit;
 
 namespace ClinicReception.Tests;
 
-public class LegacyProcessorTests
+public class DocumentTotalCalculatorTests
 {
     [Fact]
-    public void ProcessRegularClientReturns1292Point70()
+    public void Calculate_RegularClient_Returns1292()
     {
-        List<OrderLine> lines = new()
-        {
-            new OrderLine { Sku = "A1", Quantity = 12, UnitPrice = 100m },
-            new OrderLine { Sku = "B2", Quantity = 1, UnitPrice = 250m }
-        };
+        TotalRequest request = new(
+            DocumentId: 1,
+            Client: new ClientInfo(
+                "Іваненко", "i@ex.com", true),
+            Lines: new List<OrderLine>
+            {
+                new()
+                {
+                    Sku = "A1",
+                    Quantity = 12,
+                    UnitPrice = 100m
+                },
+                new()
+                {
+                    Sku = "B2",
+                    Quantity = 1,
+                    UnitPrice = 250m
+                }
+            },
+            CreatedAt: new DateOnly(2026, 3, 10),
+            CouponCode: null,
+            Status: DocumentStatus.New,
+            DeliveryPrice: 60m);
 
-        decimal total = LegacyProcessor.Process(
-            1, "Іваненко", "i@ex.com", true, lines,
-            new DateOnly(2026, 3, 10), "", DocumentStatus.New, false,
-            60m, out DocumentStatus next);
+        TotalResult result =
+            DocumentTotalCalculator.Calculate(request);
 
-        Assert.Equal(1292.70m, total);
-        Assert.Equal(DocumentStatus.Paid, next);
+        Assert.Equal(1292.70m, result.Total);
+        Assert.Equal(DocumentStatus.Paid, result.Status);
     }
 
     [Fact]
-    public void ProcessSmallOrderAddsDelivery()
+    public void Calculate_SmallOrderAddsDelivery()
     {
-        List<OrderLine> lines = new()
-        {
-            new OrderLine { Sku = "A1", Quantity = 2, UnitPrice = 200m }
-        };
+        TotalRequest request = new(
+            DocumentId: 2,
+            Client: new ClientInfo(
+                "Петренко", "p@ex.com", false),
+            Lines: new List<OrderLine>
+            {
+                new()
+                {
+                    Sku = "A1",
+                    Quantity = 2,
+                    UnitPrice = 200m
+                }
+            },
+            CreatedAt: new DateOnly(2026, 3, 10),
+            CouponCode: "SALE10",
+            Status: DocumentStatus.Paid,
+            DeliveryPrice: 60m);
 
-        decimal total = LegacyProcessor.Process(
-            2, "Петренко", "p@ex.com", false, lines,
-            new DateOnly(2026, 3, 10), "SALE10", DocumentStatus.Paid, false,
-            60m, out DocumentStatus next);
+        TotalResult result =
+            DocumentTotalCalculator.Calculate(request);
 
-        Assert.Equal(420m, total);
-        Assert.Equal(DocumentStatus.Shipped, next);
+        Assert.Equal(420m, result.Total);
+        Assert.Equal(DocumentStatus.Shipped, result.Status);
     }
 
     [Fact]
@@ -66,4 +93,3 @@ public class LegacyProcessorTests
             () => DocumentGuards.EnsureLineValid(line));
     }
 }
-
