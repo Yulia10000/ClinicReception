@@ -1,5 +1,7 @@
+
 using System;
 using System.Collections.Generic;
+using ClinicReception.Core.Domain;
 using ClinicReception.Core.Legacy;
 using Xunit;
 
@@ -8,7 +10,7 @@ namespace ClinicReception.Tests;
 public class LegacyProcessorTests
 {
     [Fact]
-    public void ProcessRegularClientReturns1292_70()
+    public void ProcessRegularClientReturns1292Point70()
     {
         List<OrderLine> lines = new()
         {
@@ -18,11 +20,11 @@ public class LegacyProcessorTests
 
         decimal total = LegacyProcessor.Process(
             1, "Іваненко", "i@ex.com", true, lines,
-            new DateOnly(2026, 3, 10), "", "New", false,
-            60m, out string next);
+            new DateOnly(2026, 3, 10), "", DocumentStatus.New, false,
+            60m, out DocumentStatus next);
 
         Assert.Equal(1292.70m, total);
-        Assert.Equal("Paid", next);
+        Assert.Equal(DocumentStatus.Paid, next);
     }
 
     [Fact]
@@ -35,11 +37,11 @@ public class LegacyProcessorTests
 
         decimal total = LegacyProcessor.Process(
             2, "Петренко", "p@ex.com", false, lines,
-            new DateOnly(2026, 3, 10), "SALE10", "Paid", false,
-            60m, out string next);
+            new DateOnly(2026, 3, 10), "SALE10", DocumentStatus.Paid, false,
+            60m, out DocumentStatus next);
 
         Assert.Equal(420m, total);
-        Assert.Equal("Shipped", next);
+        Assert.Equal(DocumentStatus.Shipped, next);
     }
 
     [Fact]
@@ -64,3 +66,4 @@ public class LegacyProcessorTests
             () => DocumentGuards.EnsureLineValid(line));
     }
 }
+
