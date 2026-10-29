@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using ClinicReception.Core.Legacy;
@@ -9,7 +8,7 @@ namespace ClinicReception.Tests;
 public class LegacyProcessorTests
 {
     [Fact]
-    public void Process_RegularClient_Returns1292_70()
+    public void ProcessRegularClientReturns1292_70()
     {
         List<OrderLine> lines = new()
         {
@@ -27,7 +26,7 @@ public class LegacyProcessorTests
     }
 
     [Fact]
-    public void Process_SmallOrder_AddsDelivery()
+    public void ProcessSmallOrderAddsDelivery()
     {
         List<OrderLine> lines = new()
         {
@@ -44,14 +43,24 @@ public class LegacyProcessorTests
     }
 
     [Fact]
-    public void Process_NoLines_ReturnsMinusOne()
+    public void CalculateNoLinesThrowsArgument()
     {
-        decimal total = LegacyProcessor.Process(
-            3, "Коваль", "k@ex.com", false,
-            new List<OrderLine>(),
-            new DateOnly(2026, 3, 10), "", "New", false,
-            60m, out string next);
+        Assert.Throws<ArgumentException>(() =>
+            DocumentGuards.EnsureLinesValid(
+                new List<OrderLine>()));
+    }
 
-        Assert.Equal(-1m, total);
+    [Fact]
+    public void CalculateZeroQuantityThrowsRange()
+    {
+        OrderLine line = new()
+        {
+            Sku = "A1",
+            Quantity = 0,
+            UnitPrice = 10m
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => DocumentGuards.EnsureLineValid(line));
     }
 }
