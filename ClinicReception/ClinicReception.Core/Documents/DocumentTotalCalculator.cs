@@ -19,7 +19,9 @@ public static class DocumentTotalCalculator
             decimal sum = line.Quantity * line.UnitPrice;
 
             if (line.Quantity >= PricingRules.BulkQuantity)
+            {
                 sum -= sum * PricingRules.BulkRate;
+            }
 
             subtotal += sum;
         }
@@ -42,10 +44,14 @@ public static class DocumentTotalCalculator
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
 
         if (amount > PricingRules.LargeOrderFrom)
+        {
             return amount * PricingRules.LargeOrderRate;
+        }
 
         if (amount > PricingRules.MediumOrderFrom)
+        {
             return amount * PricingRules.MediumOrderRate;
+        }
 
         return 0m;
     }

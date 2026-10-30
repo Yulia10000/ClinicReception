@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ClinicReception.Lab02.Domain -> C:\Users\Yulss\source\repos\ClinicReception\ClinicReception\ClinicReception.Lab02.Domain\bin\Debug\net9.0\ClinicReception.Lab02.Domain.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.81
+
+Workload updates are available. Run `dotnet workload list` for more information.
