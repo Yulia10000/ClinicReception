@@ -1,40 +1,37 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using ClinicReception.Core.Documents;
 using ClinicReception.Core.Domain;
-using ClinicReception.Core.Legacy;
 using Xunit;
 
 namespace ClinicReception.Tests;
 
 public class DocumentTotalCalculatorTests
 {
-    [Fact]
-    public void Calculate_RegularClient_Returns1292()
+    private static TotalRequest BuildSampleRequest()
     {
-        TotalRequest request = new(
+        return new TotalRequest(
             DocumentId: 1,
-            Client: new ClientInfo(
-                "Іваненко", "i@ex.com", true),
+            Client: new Patient(1, "Іваненко", "i@ex.com")
+            {
+                IsRegular = true
+            },
             Lines: new List<OrderLine>
             {
-                new()
-                {
-                    Sku = "A1",
-                    Quantity = 12,
-                    UnitPrice = 100m
-                },
-                new()
-                {
-                    Sku = "B2",
-                    Quantity = 1,
-                    UnitPrice = 250m
-                }
+                new("A1", 12, 100m),
+                new("B2", 1, 250m)
             },
             CreatedAt: new DateOnly(2026, 3, 10),
             CouponCode: null,
             Status: DocumentStatus.New,
             DeliveryPrice: 60m);
+    }
+
+    [Fact]
+    public void Calculate_RegularClient_Returns1292()
+    {
+        TotalRequest request = BuildSampleRequest();
 
         TotalResult result =
             DocumentTotalCalculator.Calculate(request);
@@ -48,16 +45,10 @@ public class DocumentTotalCalculatorTests
     {
         TotalRequest request = new(
             DocumentId: 2,
-            Client: new ClientInfo(
-                "Петренко", "p@ex.com", false),
+            Client: new Patient(2, "Петренко", "p@ex.com"),
             Lines: new List<OrderLine>
             {
-                new()
-                {
-                    Sku = "A1",
-                    Quantity = 2,
-                    UnitPrice = 200m
-                }
+                new("A1", 2, 200m)
             },
             CreatedAt: new DateOnly(2026, 3, 10),
             CouponCode: "SALE10",
@@ -82,41 +73,10 @@ public class DocumentTotalCalculatorTests
     [Fact]
     public void CalculateZeroQuantityThrowsRange()
     {
-        OrderLine line = new()
-        {
-            Sku = "A1",
-            Quantity = 0,
-            UnitPrice = 10m
-        };
+        OrderLine line = new("A1", 1, 10m);
 
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => DocumentGuards.EnsureLineValid(line));
-    }
-    private static TotalRequest BuildSampleRequest()
-    {
-        return new TotalRequest(
-            DocumentId: 1,
-            Client: new ClientInfo(
-                "Іваненко", "i@ex.com", true),
-            Lines: new List<OrderLine>
-            {
-            new()
-            {
-                Sku = "A1",
-                Quantity = 12,
-                UnitPrice = 100m
-            },
-            new()
-            {
-                Sku = "B2",
-                Quantity = 1,
-                UnitPrice = 250m
-            }
-            },
-            CreatedAt: new DateOnly(2026, 3, 10),
-            CouponCode: null,
-            Status: DocumentStatus.New,
-            DeliveryPrice: 60m);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new OrderLine("A1", 0, 10m));
     }
 
     [Fact]
@@ -144,6 +104,7 @@ public class DocumentTotalCalculatorTests
 
         Assert.Contains("10.00", writer.ToString());
     }
+
     [Fact]
     public void TextOfIncludesDocumentNumberAndClient()
     {
@@ -156,7 +117,7 @@ public class DocumentTotalCalculatorTests
             DocumentReport.TextOf(request, result);
 
         Assert.Contains("Документ № 1", text);
-        Assert.Contains("Клієнт: Іваненко", text);
+        Assert.Contains("Пацієнт: Іваненко", text);
     }
 
     [Fact]
