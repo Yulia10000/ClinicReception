@@ -2,7 +2,7 @@
 using System;
 using System.Globalization;
 using System.Text;
-using ClinicReception.Core.Legacy;
+using ClinicReception.Core.Domain;
 
 namespace ClinicReception.Core.Documents;
 
@@ -19,7 +19,7 @@ public static class DocumentReport
         StringBuilder text = new();
 
         text.AppendLine(culture, $"Документ № {request.DocumentId}");
-        text.AppendLine(culture, $"Клієнт: {request.Client.Name}");
+        text.AppendLine(culture, $"Пацієнт: {request.Client.Name}");
 
         foreach (OrderLine line in request.Lines)
         {

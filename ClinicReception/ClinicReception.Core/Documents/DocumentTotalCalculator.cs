@@ -1,8 +1,8 @@
+using ClinicReception.Core.Legacy;
 
 using System;
 using System.Collections.Generic;
 using ClinicReception.Core.Domain;
-using ClinicReception.Core.Legacy;
 
 namespace ClinicReception.Core.Documents;
 
