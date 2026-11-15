@@ -7,7 +7,7 @@ public interface IDocumentRepository
 {
     void Add(Document document);
 
-    Document? GetById(int id);
+    Document GetById(int id);
 
     IReadOnlyList<Document> GetAll();
 }
