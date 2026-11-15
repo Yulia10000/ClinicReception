@@ -1,4 +1,6 @@
+
 using ClinicReception.Core.Legacy;
+using ClinicReception.Core.Errors;
 
 namespace ClinicReception.Core.Services;
 
@@ -12,59 +14,38 @@ public class LegacyOrderService
         _repository = repository;
     }
 
-    // Антипатерн 1: проковтнутий виняток і повернення null
+    // Виправлення антипатерну 1
     public LegacyDocument? Load(int documentId)
     {
-        try
-        {
-            return _repository.GetById(documentId);
-        }
-        catch (Exception)
-        {
-        }
-
-        return null;
+        return _repository.GetById(documentId);
     }
 
-    // Антипатерни 2 і 3: широкий catch та throw ex
+    // Виправлення антипатернів 2 і 3
     public void Cancel(int documentId, string reason)
     {
-        try
-        {
-            var document = _repository.GetById(documentId);
+        var document = _repository.GetById(documentId)
+            ?? throw new DomainRuleException(
+                "document.exists",
+                $"Документ {documentId} не знайдено.");
 
-            document!.Status = 2;
+        document.Status = 2;
 
-            _repository.SaveToFile(
-                document,
-                "documents.json");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Щось пішло не так");
-            throw ex;
-        }
+        _repository.SaveToFile(
+            document,
+            "documents.json");
     }
 
-    // Антипатерн 4: виняток замість TryParse
+    // Виправлення антипатерну 4
     public int CountValidQuantities(string[] rows)
     {
         var valid = 0;
 
         foreach (var row in rows)
         {
-            try
+            if (int.TryParse(row, out var quantity) &&
+                quantity > 0)
             {
-                var quantity = int.Parse(row);
-
-                if (quantity > 0)
-                {
-                    valid++;
-                }
-            }
-            catch (FormatException)
-            {
-                // Неправильне значення пропускається
+                valid++;
             }
         }
 
