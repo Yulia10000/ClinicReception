@@ -1,10 +1,12 @@
 
+
 using System;
 using ClinicReception.App.Parsing;
 using ClinicReception.Core.Abstractions;
 using ClinicReception.Core.Domain;
 using ClinicReception.Core.Documents;
 using ClinicReception.Core.Legacy;
+using ClinicReception.Core.Logging;
 using ClinicReception.Core.Policies;
 using ClinicReception.Core.Repositories;
 using ClinicReception.Core.Services;
@@ -21,6 +23,9 @@ using var loggerFactory = LoggerFactory.Create(builder =>
 
     builder.SetMinimumLevel(LogLevel.Debug);
 });
+
+// Створення журналу аудиту
+using var auditLog = new FileAuditLog("audit.log");
 
 // Створення основного сервісу
 IDocumentRepository repository =
@@ -43,10 +48,32 @@ Document document = new(
 
 document.AddLine(new OrderLine("A1", 2, 250m));
 
+// Збереження документа та запис у журнал аудиту
 service.Place(document);
+auditLog.Write("Збереження документа", document.Id);
+
+// Розрахунок суми та запис у журнал аудиту
+decimal documentTotal = service.TotalOf(document);
+
+auditLog.Write("Розрахунок суми", document.Id);
+// Перевірка закриття файлу після винятку
+try
+{
+    using (var testAuditLog = new FileAuditLog("audit-test.log"))
+    {
+        testAuditLog.Write("Перевірка після винятку", 99);
+
+        throw new InvalidOperationException("Тестовий виняток");
+    }
+}
+catch (InvalidOperationException)
+{
+    Console.WriteLine("Файл аудиту закрито після винятку.");
+}
 
 Console.WriteLine(
-    $"Сума документа: {service.TotalOf(document):0.00}");
+    $"Сума документа: {documentTotal:0.00}");
+
 // Перевірка рівня Warning
 Document emptyDocument = new(
     3,
