@@ -1,8 +1,10 @@
+
 using System;
 using ClinicReception.Core.Domain;
 using ClinicReception.Core.Policies;
 using ClinicReception.Core.Repositories;
 using ClinicReception.Core.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace ClinicReception.Tests;
@@ -37,7 +39,10 @@ public class DocumentSolidTests
         InMemoryDocumentRepository repository = new();
         DiscountPricingPolicy pricing = new(0.10m);
 
-        DocumentService service = new(repository, pricing);
+        DocumentService service = new(
+            repository,
+            pricing,
+            NullLogger<DocumentService>.Instance);
 
         Document document = new(
             1,

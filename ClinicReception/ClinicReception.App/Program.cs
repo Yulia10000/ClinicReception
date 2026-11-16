@@ -8,6 +8,19 @@ using ClinicReception.Core.Legacy;
 using ClinicReception.Core.Policies;
 using ClinicReception.Core.Repositories;
 using ClinicReception.Core.Services;
+using Microsoft.Extensions.Logging;
+
+// Налаштування логування
+using var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddSimpleConsole(options =>
+    {
+        options.TimestampFormat = "HH:mm:ss ";
+        options.IncludeScopes = true;
+    });
+
+    builder.SetMinimumLevel(LogLevel.Debug);
+});
 
 // Створення основного сервісу
 IDocumentRepository repository =
@@ -16,8 +29,11 @@ IDocumentRepository repository =
 IPricingPolicy pricing =
     new DiscountPricingPolicy(0.05m);
 
+ILogger<DocumentService> logger =
+    loggerFactory.CreateLogger<DocumentService>();
+
 DocumentService service =
-    new DocumentService(repository, pricing);
+    new DocumentService(repository, pricing, logger);
 
 // Створення документа
 Document document = new(
@@ -31,6 +47,23 @@ service.Place(document);
 
 Console.WriteLine(
     $"Сума документа: {service.TotalOf(document):0.00}");
+// Перевірка рівня Warning
+Document emptyDocument = new(
+    3,
+    100,
+    DateOnly.FromDateTime(DateTime.Today));
+
+service.TotalOf(emptyDocument);
+
+// Перевірка рівня Error
+try
+{
+    service.Place(null!);
+}
+catch (ArgumentNullException)
+{
+    Console.WriteLine("Перевірку рівня Error виконано.");
+}
 
 // Налаштування старого прикладу
 ILegacyDocumentRepository legacyRepository =
@@ -89,7 +122,6 @@ while (true)
     Console.Write("Кількість: ");
     string quantity = Console.ReadLine() ?? "";
 
-    // Окрема перевірка кількості
     if (!int.TryParse(quantity, out int quantityValue) ||
         quantityValue <= 0)
     {
