@@ -1,6 +1,4 @@
 
-
-
 using System;
 using System.Collections.Generic;
 
@@ -49,29 +47,27 @@ public class LegacyAppointmentProcessor
     private readonly ShippingPolicy _shippingPolicy = new();
     private readonly ReportBuilder _reportBuilder = new();
 
-    public string Handle(int docId, int clientId,
-        string clientName, string? clientMail,
-        ClientKind clientKind, int clientDone,
-        List<ServiceLine>? items, DocState state,
-        string currency, DateTime createdAt, bool sendMail)
+    public string Handle(OrderRequest request)
     {
-        if (items == null)
+        if (request.Items == null)
             return "ERR: null";
 
-        if (items.Count == 0)
+        if (request.Items.Count == 0)
             return "ERR: empty";
 
-        if (state != DocState.New && state != DocState.Paid)
+        if (request.State != DocState.New &&
+            request.State != DocState.Paid)
             return "ERR: state";
 
-        if (clientMail == null || !clientMail.Contains("@"))
+        if (request.ClientMail == null ||
+            !request.ClientMail.Contains("@"))
             return "ERR: mail";
 
-        _log.Add("ok " + docId);
+        _log.Add("ok " + request.DocId);
 
-        _tmpSum = Subtotal(items);
+        _tmpSum = Subtotal(request.Items);
         _tmpDiscount = _discountPolicy.Calculate(
-            _tmpSum, clientKind, clientDone);
+            _tmpSum, request.ClientKind, request.ClientDone);
 
         decimal ship = _shippingPolicy.Calculate(
             _tmpSum, _tmpDiscount);
@@ -79,12 +75,17 @@ public class LegacyAppointmentProcessor
         decimal total = _tmpSum - _tmpDiscount + ship;
 
         string txt = _reportBuilder.Build(
-            docId, clientName, items,
-            _tmpDiscount, ship, total, currency);
+            request.DocId,
+            request.ClientName,
+            request.Items,
+            _tmpDiscount,
+            ship,
+            total,
+            request.Currency);
 
-        if (sendMail)
+        if (request.SendMail)
         {
-            _log.Add("mail -> " + clientMail);
+            _log.Add("mail -> " + request.ClientMail);
         }
 
         return txt;

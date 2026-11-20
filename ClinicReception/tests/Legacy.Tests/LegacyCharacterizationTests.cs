@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,7 +8,6 @@ public class LegacyCharacterizationTests
 {
     public LegacyCharacterizationTests()
     {
-        // Фіксуємо формат чисел
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
     }
 
@@ -19,7 +17,28 @@ public class LegacyCharacterizationTests
         new ServiceLine { Code = "B-2", Qty = 1, Price = 400m }
     };
 
-    // Перевірка чотирьох помилкових ситуацій
+    private static OrderRequest CreateRequest(
+        List<ServiceLine>? items,
+        DocState state,
+        string mail,
+        ClientKind kind = ClientKind.Regular)
+    {
+        return new OrderRequest
+        {
+            DocId = 1001,
+            ClientId = 7,
+            ClientName = "Іван",
+            ClientMail = mail,
+            ClientKind = kind,
+            ClientDone = 0,
+            Items = items,
+            State = state,
+            Currency = "UAH",
+            CreatedAt = new DateTime(2026, 3, 1),
+            SendMail = false
+        };
+    }
+
     [Theory]
     [InlineData(null, DocState.New, "a@b.c", "ERR: null")]
     [InlineData("empty", DocState.New, "a@b.c", "ERR: empty")]
@@ -37,25 +56,24 @@ public class LegacyCharacterizationTests
         };
 
         var sut = new LegacyAppointmentProcessor();
+        var request = CreateRequest(items, state, mail);
 
-        var actual = sut.Handle(
-            1001, 7, "Іван", mail,
-            ClientKind.Regular, 0, items, state, "UAH",
-            new DateTime(2026, 3, 1), false);
+        var actual = sut.Handle(request);
 
         Assert.Equal(expected, actual);
     }
 
-    // Перевірка повного тексту звіту
     [Fact]
     public void Handle_VipOrder_ReturnsExactReport()
     {
         var sut = new LegacyAppointmentProcessor();
 
-        var report = sut.Handle(
-            1001, 7, "Іван", "a@b.c",
-            ClientKind.Vip, 3, TwoLines(), DocState.New, "UAH",
-            new DateTime(2026, 3, 1), false);
+        var request = CreateRequest(
+            TwoLines(), DocState.New, "a@b.c", ClientKind.Vip);
+
+        request.ClientDone = 3;
+
+        var report = sut.Handle(request);
 
         var expected =
             "Документ #1001\n" +
@@ -69,7 +87,6 @@ public class LegacyCharacterizationTests
         Assert.Equal(expected, report);
     }
 
-    // Перевірка різних видів знижок
     [Theory]
     [InlineData(ClientKind.Regular, 0, 760)]
     [InlineData(ClientKind.Vip, 0, 655)]
@@ -85,7 +102,6 @@ public class LegacyCharacterizationTests
         Assert.Equal(expected, total);
     }
 
-    // Перевірка опису клієнта
     [Fact]
     public void DescribeClient_Vip_BuildsCaption()
     {
@@ -109,7 +125,6 @@ public class LegacyCharacterizationTests
         Assert.Equal(expected, actual);
     }
 
-    // Перевірка межі безкоштовної доставки
     [Fact]
     public void Preview_AmountExactly1000_Returns1000()
     {
@@ -129,14 +144,15 @@ public class LegacyCharacterizationTests
         Assert.Equal(1000m, actual);
     }
 
-    // Перевірка стану документа paid
     [Fact]
     public void Handle_PaidState_AcceptsDocument()
     {
-        var actual = new LegacyAppointmentProcessor().Handle(
-            1002, 7, "Іван", "a@b.c",
-            ClientKind.Regular, 0, TwoLines(), DocState.Paid, "UAH",
-            new DateTime(2026, 3, 1), false);
+        var request = CreateRequest(
+            TwoLines(), DocState.Paid, "a@b.c");
+
+        request.DocId = 1002;
+
+        var actual = new LegacyAppointmentProcessor().Handle(request);
 
         Assert.StartsWith("Документ #1002\n", actual);
     }
