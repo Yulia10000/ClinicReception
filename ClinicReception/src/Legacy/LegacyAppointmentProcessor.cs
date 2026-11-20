@@ -143,40 +143,11 @@ public class LegacyAppointmentProcessor
     public decimal Preview(ClientKind clientKind, int clientDone,
         List<ServiceLine> items)
     {
-        decimal s = 0m;
+        decimal sum = Subtotal(items);
+        decimal discount = DiscountOf(sum, clientKind, clientDone);
+        decimal shipping = ShippingOf(sum, discount);
 
-        foreach (var it in items)
-        {
-            s += it.Qty * it.Price;
-        }
-
-        decimal d = 0m;
-
-        if (clientKind == ClientKind.Vip)
-        {
-            d = s * PricingRules.VipRate;
-            if (d > PricingRules.MaxDiscount)
-                d = PricingRules.MaxDiscount;
-        }
-        else if (clientKind == ClientKind.Staff)
-        {
-            d = s * PricingRules.StaffRate;
-            if (d > PricingRules.MaxDiscount)
-                d = PricingRules.MaxDiscount;
-        }
-        else if (clientDone > PricingRules.LoyalOrders)
-        {
-            d = s * PricingRules.LoyalRate;
-            if (d > PricingRules.MaxDiscount)
-                d = PricingRules.MaxDiscount;
-        }
-
-        decimal sh = 0m;
-
-        if (s - d < PricingRules.FreeShipFrom)
-            sh = PricingRules.ShipCost;
-
-        return s - d + sh;
+        return sum - discount + shipping;
     }
 
     public string DescribeClient(Patient c)
@@ -207,4 +178,5 @@ public class LegacyAppointmentProcessor
         return r;
     }
 }
+
 
