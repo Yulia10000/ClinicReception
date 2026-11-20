@@ -119,8 +119,7 @@ public class LegacyCharacterizationTests
         var expected = "ІВАН [VIP] [ЛОЯЛЬНИЙ] " +
                        "<ivan@mail.com> стаж " + years;
 
-        var actual = new LegacyAppointmentProcessor()
-            .DescribeClient(patient);
+        var actual = patient.Describe();
 
         Assert.Equal(expected, actual);
     }
