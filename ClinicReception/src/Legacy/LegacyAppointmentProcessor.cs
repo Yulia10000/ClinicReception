@@ -45,6 +45,10 @@ public class LegacyAppointmentProcessor
     private decimal _tmpDiscount;
     private readonly List<string> _log = new();
 
+    private readonly DiscountPolicy _discountPolicy = new();
+    private readonly ShippingPolicy _shippingPolicy = new();
+    private readonly ReportBuilder _reportBuilder = new();
+
     public string Handle(int docId, int clientId,
         string clientName, string? clientMail,
         ClientKind clientKind, int clientDone,
@@ -66,27 +70,17 @@ public class LegacyAppointmentProcessor
         _log.Add("ok " + docId);
 
         _tmpSum = Subtotal(items);
-        _tmpDiscount = DiscountOf(_tmpSum, clientKind, clientDone);
-        decimal ship = ShippingOf(_tmpSum, _tmpDiscount);
+        _tmpDiscount = _discountPolicy.Calculate(
+            _tmpSum, clientKind, clientDone);
+
+        decimal ship = _shippingPolicy.Calculate(
+            _tmpSum, _tmpDiscount);
 
         decimal total = _tmpSum - _tmpDiscount + ship;
 
-        string txt = "Документ #" + docId + "\n";
-        txt += "Клієнт: " + clientName + "\n";
-
-        for (int i = 0; i < items.Count; i++)
-        {
-            txt += items[i].Code + " x" + items[i].Qty + " = " +
-                (items[i].Qty * items[i].Price)
-                    .ToString("0.00") + " " + currency + "\n";
-        }
-
-        txt += "Знижка: " + _tmpDiscount.ToString("0.00") +
-            " " + currency + "\n";
-        txt += "Доставка: " + ship.ToString("0.00") +
-            " " + currency + "\n";
-        txt += "Разом: " + total.ToString("0.00") +
-            " " + currency + "\n";
+        string txt = _reportBuilder.Build(
+            docId, clientName, items,
+            _tmpDiscount, ship, total, currency);
 
         if (sendMail)
         {
@@ -108,44 +102,13 @@ public class LegacyAppointmentProcessor
         return sum;
     }
 
-    private decimal DiscountOf(
-        decimal sum, ClientKind clientKind, int clientDone)
-    {
-        decimal discount = 0m;
-
-        if (clientKind == ClientKind.Vip)
-        {
-            discount = sum * PricingRules.VipRate;
-        }
-        else if (clientKind == ClientKind.Staff)
-        {
-            discount = sum * PricingRules.StaffRate;
-        }
-        else if (clientDone > PricingRules.LoyalOrders)
-        {
-            discount = sum * PricingRules.LoyalRate;
-        }
-
-        if (discount > PricingRules.MaxDiscount)
-            discount = PricingRules.MaxDiscount;
-
-        return discount;
-    }
-
-    private decimal ShippingOf(decimal sum, decimal discount)
-    {
-        if (sum - discount < PricingRules.FreeShipFrom)
-            return PricingRules.ShipCost;
-
-        return 0m;
-    }
-
     public decimal Preview(ClientKind clientKind, int clientDone,
         List<ServiceLine> items)
     {
         decimal sum = Subtotal(items);
-        decimal discount = DiscountOf(sum, clientKind, clientDone);
-        decimal shipping = ShippingOf(sum, discount);
+        decimal discount = _discountPolicy.Calculate(
+            sum, clientKind, clientDone);
+        decimal shipping = _shippingPolicy.Calculate(sum, discount);
 
         return sum - discount + shipping;
     }
@@ -178,5 +141,6 @@ public class LegacyAppointmentProcessor
         return r;
     }
 }
+
 
 
