@@ -1,5 +1,6 @@
 
 
+
 using System;
 using System.Collections.Generic;
 
@@ -50,7 +51,6 @@ public class LegacyAppointmentProcessor
         List<ServiceLine>? items, DocState state,
         string currency, DateTime createdAt, bool sendMail)
     {
-        // Перевірка вхідних даних за допомогою раннього повернення
         if (items == null)
             return "ERR: null";
 
@@ -65,46 +65,22 @@ public class LegacyAppointmentProcessor
 
         _log.Add("ok " + docId);
 
-        _tmpSum = 0m;
-        for (int i = 0; i < items.Count; i++)
-        {
-            _tmpSum += items[i].Qty * items[i].Price;
-        }
-
-        _tmpDiscount = 0m;
-        if (clientKind == ClientKind.Vip)
-        {
-            _tmpDiscount = _tmpSum * PricingRules.VipRate;
-            if (_tmpDiscount > PricingRules.MaxDiscount)
-                _tmpDiscount = PricingRules.MaxDiscount;
-        }
-        else if (clientKind == ClientKind.Staff)
-        {
-            _tmpDiscount = _tmpSum * PricingRules.StaffRate;
-            if (_tmpDiscount > PricingRules.MaxDiscount)
-                _tmpDiscount = PricingRules.MaxDiscount;
-        }
-        else if (clientDone > PricingRules.LoyalOrders)
-        {
-            _tmpDiscount = _tmpSum * PricingRules.LoyalRate;
-            if (_tmpDiscount > PricingRules.MaxDiscount)
-                _tmpDiscount = PricingRules.MaxDiscount;
-        }
-
-        decimal ship = 0m;
-        if (_tmpSum - _tmpDiscount < PricingRules.FreeShipFrom)
-            ship = PricingRules.ShipCost;
+        _tmpSum = Subtotal(items);
+        _tmpDiscount = DiscountOf(_tmpSum, clientKind, clientDone);
+        decimal ship = ShippingOf(_tmpSum, _tmpDiscount);
 
         decimal total = _tmpSum - _tmpDiscount + ship;
 
         string txt = "Документ #" + docId + "\n";
         txt += "Клієнт: " + clientName + "\n";
+
         for (int i = 0; i < items.Count; i++)
         {
             txt += items[i].Code + " x" + items[i].Qty + " = " +
                 (items[i].Qty * items[i].Price)
                     .ToString("0.00") + " " + currency + "\n";
         }
+
         txt += "Знижка: " + _tmpDiscount.ToString("0.00") +
             " " + currency + "\n";
         txt += "Доставка: " + ship.ToString("0.00") +
@@ -116,19 +92,66 @@ public class LegacyAppointmentProcessor
         {
             _log.Add("mail -> " + clientMail);
         }
+
         return txt;
+    }
+
+    private decimal Subtotal(List<ServiceLine> items)
+    {
+        decimal sum = 0m;
+
+        foreach (var item in items)
+        {
+            sum += item.Qty * item.Price;
+        }
+
+        return sum;
+    }
+
+    private decimal DiscountOf(
+        decimal sum, ClientKind clientKind, int clientDone)
+    {
+        decimal discount = 0m;
+
+        if (clientKind == ClientKind.Vip)
+        {
+            discount = sum * PricingRules.VipRate;
+        }
+        else if (clientKind == ClientKind.Staff)
+        {
+            discount = sum * PricingRules.StaffRate;
+        }
+        else if (clientDone > PricingRules.LoyalOrders)
+        {
+            discount = sum * PricingRules.LoyalRate;
+        }
+
+        if (discount > PricingRules.MaxDiscount)
+            discount = PricingRules.MaxDiscount;
+
+        return discount;
+    }
+
+    private decimal ShippingOf(decimal sum, decimal discount)
+    {
+        if (sum - discount < PricingRules.FreeShipFrom)
+            return PricingRules.ShipCost;
+
+        return 0m;
     }
 
     public decimal Preview(ClientKind clientKind, int clientDone,
         List<ServiceLine> items)
     {
         decimal s = 0m;
+
         foreach (var it in items)
         {
             s += it.Qty * it.Price;
         }
 
         decimal d = 0m;
+
         if (clientKind == ClientKind.Vip)
         {
             d = s * PricingRules.VipRate;
@@ -149,6 +172,7 @@ public class LegacyAppointmentProcessor
         }
 
         decimal sh = 0m;
+
         if (s - d < PricingRules.FreeShipFrom)
             sh = PricingRules.ShipCost;
 
@@ -158,19 +182,28 @@ public class LegacyAppointmentProcessor
     public string DescribeClient(Patient c)
     {
         string s = c.Name.Trim().ToUpper();
-        if (c.Kind == ClientKind.Vip) s += " [VIP]";
+
+        if (c.Kind == ClientKind.Vip)
+            s += " [VIP]";
+
         if (c.DoneCount > PricingRules.LoyalOrders)
             s += " [ЛОЯЛЬНИЙ]";
+
         s += " <" + c.Email.ToLower() + ">";
+
         int years = DateTime.Now.Year - c.SinceUtc.Year;
         s += " стаж " + years;
+
         return s;
     }
 
     public string DumpLog()
     {
         string r = "";
-        foreach (var l in _log) r += l + "\n";
+
+        foreach (var l in _log)
+            r += l + "\n";
+
         return r;
     }
 }
