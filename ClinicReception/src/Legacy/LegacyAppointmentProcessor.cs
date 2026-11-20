@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 
@@ -57,8 +56,6 @@ public class ServiceLine
 
 public class LegacyAppointmentProcessor
 {
-    private decimal _tmpSum;
-    private decimal _tmpDiscount;
     private readonly List<string> _log = new();
 
     private readonly DiscountPolicy _discountPolicy = new();
@@ -83,20 +80,20 @@ public class LegacyAppointmentProcessor
 
         _log.Add("ok " + request.DocId);
 
-        _tmpSum = Subtotal(request.Items);
-        _tmpDiscount = _discountPolicy.Calculate(
-            _tmpSum, request.ClientKind, request.ClientDone);
+        decimal sum = Subtotal(request.Items);
 
-        decimal ship = _shippingPolicy.Calculate(
-            _tmpSum, _tmpDiscount);
+        decimal discount = _discountPolicy.Calculate(
+            sum, request.ClientKind, request.ClientDone);
 
-        decimal total = _tmpSum - _tmpDiscount + ship;
+        decimal ship = _shippingPolicy.Calculate(sum, discount);
+
+        decimal total = sum - discount + ship;
 
         string txt = _reportBuilder.Build(
             request.DocId,
             request.ClientName,
             request.Items,
-            _tmpDiscount,
+            discount,
             ship,
             total,
             request.Currency);
@@ -131,8 +128,6 @@ public class LegacyAppointmentProcessor
 
         return sum - discount + shipping;
     }
-
-    
 
     public string DumpLog()
     {
