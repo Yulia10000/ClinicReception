@@ -50,36 +50,20 @@ public class LegacyAppointmentProcessor
         List<ServiceLine>? items, DocState state,
         string currency, DateTime createdAt, bool sendMail)
     {
-        if (items != null)
-        {
-            if (items.Count > 0)
-            {
-                if (state == DocState.New || state == DocState.Paid)
-                {
-                    if (clientMail != null &&
-                        clientMail.Contains("@"))
-                    {
-                        _log.Add("ok " + docId);
-                    }
-                    else
-                    {
-                        return "ERR: mail";
-                    }
-                }
-                else
-                {
-                    return "ERR: state";
-                }
-            }
-            else
-            {
-                return "ERR: empty";
-            }
-        }
-        else
-        {
+        // Перевірка вхідних даних за допомогою раннього повернення
+        if (items == null)
             return "ERR: null";
-        }
+
+        if (items.Count == 0)
+            return "ERR: empty";
+
+        if (state != DocState.New && state != DocState.Paid)
+            return "ERR: state";
+
+        if (clientMail == null || !clientMail.Contains("@"))
+            return "ERR: mail";
+
+        _log.Add("ok " + docId);
 
         _tmpSum = 0m;
         for (int i = 0; i < items.Count; i++)
